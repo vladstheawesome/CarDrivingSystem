@@ -82,6 +82,7 @@ namespace CarGame.CarLogic
 
             if (avoidMultiplier == 0)
             {
+                SlowDown();
                 if (Physics.Raycast(sensorStartPosition, transform.forward, out hit, sensorLength))
                 {
                     if (!hit.collider.CompareTag("Terrain"))
@@ -96,6 +97,7 @@ namespace CarGame.CarLogic
             sensorStartPosition += transform.right * frontSideSensorPosition;
             if (Physics.Raycast(sensorStartPosition, transform.forward, out hit, sensorLength))
             {
+                SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
                     Debug.DrawLine(sensorStartPosition, hit.point);
@@ -107,6 +109,7 @@ namespace CarGame.CarLogic
             // Front Right Angle sensor
             else if (Physics.Raycast(sensorStartPosition, Quaternion.AngleAxis(frontSensorAngle, transform.up) * transform.forward, out hit, sensorLength))
             {
+                SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
                     Debug.DrawLine(sensorStartPosition, hit.point);
@@ -119,6 +122,7 @@ namespace CarGame.CarLogic
             sensorStartPosition -= transform.right * frontSideSensorPosition * 2;
             if (Physics.Raycast(sensorStartPosition, transform.forward, out hit, sensorLength))
             {
+                SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
                     Debug.DrawLine(sensorStartPosition, hit.point);
@@ -130,6 +134,7 @@ namespace CarGame.CarLogic
             // Front Left Angle sensor
             else if (Physics.Raycast(sensorStartPosition, Quaternion.AngleAxis(-frontSensorAngle, transform.up) * transform.forward, out hit, sensorLength))
             {
+                SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
                     Debug.DrawLine(sensorStartPosition, hit.point);
@@ -153,7 +158,7 @@ namespace CarGame.CarLogic
             //}
 
             if (isAvoiding)
-            {
+            {                
                 targetSteerAngle = maxSteerAngle * avoidMultiplier;
                 //wheelFL.steerAngle = maxSteerAngle * avoidMultiplier;
                 //wheelFR.steerAngle = maxSteerAngle * avoidMultiplier;
@@ -201,14 +206,16 @@ namespace CarGame.CarLogic
 
             if (distanceToNode < 12f && distanceToNode > 3f)
             {
-                isBraking = true;
+                //isBraking = true;
+
+                SlowDown();
             }
 
             // Drive to the NEXT Node if car has arrived on CURRENT node 
             // (or close to current node by 0.2f)
             if (Vector3.Distance(transform.position, nodes[currentNode].position) < 3f)
             {
-                isBraking = false;
+                //isBraking = false;
                 // if we at the LAST node of the path
                 // we need to loop back to the START or FIRST node
                 if (currentNode == nodes.Count - 1)
@@ -219,9 +226,15 @@ namespace CarGame.CarLogic
                 else
                 {
                     currentNode++;
-                    isBraking = false;
+                    //isBraking = false;
                 }
             }
+        }
+
+        private void SlowDown()
+        {
+            wheelFL.motorTorque = maxMotorTorque / 4;
+            wheelFR.motorTorque = maxMotorTorque / 4;
         }
 
         private void ApplyBraking()
