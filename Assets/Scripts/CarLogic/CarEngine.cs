@@ -16,10 +16,10 @@ namespace CarGame.CarLogic
         public WheelCollider wheelFR;
         public WheelCollider wheelRL;
         public WheelCollider wheelRR;
-        public float maxMotorTorque = 80f;
+        public float maxMotorTorque = 40f;
         public float maxBrakeTorque = 150f;
         public float currentSpeed;
-        public float maximumSpeed = 100f;
+        public float maximumSpeed = 50f;
         public Vector3 centerOfMass;
         public bool isBraking = false;
         public Texture2D textureNormal;
@@ -37,6 +37,8 @@ namespace CarGame.CarLogic
         private bool isAvoiding = false;
         private float targetSteerAngle = 0;
 
+        Car360Sensor sensor;
+
         void Start()
         {
             GetComponent<Rigidbody>().centerOfMass = centerOfMass;
@@ -44,6 +46,8 @@ namespace CarGame.CarLogic
             Transform[] pathTransforms = path.GetComponentsInChildren<Transform>();
             nodes = new List<Transform>();
             EngineGetNodes(pathTransforms, nodes);
+
+            sensor = GetComponent<Car360Sensor>();
         }
 
         // Get all nodes from current path
@@ -87,6 +91,8 @@ namespace CarGame.CarLogic
                 {
                     if (!hit.collider.CompareTag("Terrain"))
                     {
+                        var obstacleType = sensor.CheckObstacle(hit.collider);
+
                         Debug.DrawLine(sensorStartPosition, hit.point);
                         isAvoiding = true;
                     }
@@ -100,6 +106,8 @@ namespace CarGame.CarLogic
                 SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
+                    var obstacleType = sensor.CheckObstacle(hit.collider);
+
                     Debug.DrawLine(sensorStartPosition, hit.point);
                     isAvoiding = true;
                     avoidMultiplier -= 1f;
@@ -204,7 +212,7 @@ namespace CarGame.CarLogic
         {
             var distanceToNode = Vector3.Distance(transform.position, nodes[currentNode].position);
 
-            if (distanceToNode < 12f && distanceToNode > 3f)
+            if (distanceToNode < 15f && distanceToNode > 3f /*|| distanceToNode < 2f*/)
             {
                 //isBraking = true;
 
@@ -215,7 +223,7 @@ namespace CarGame.CarLogic
             // (or close to current node by 0.2f)
             if (Vector3.Distance(transform.position, nodes[currentNode].position) < 3f)
             {
-                //isBraking = false;
+                isBraking = false;
                 // if we at the LAST node of the path
                 // we need to loop back to the START or FIRST node
                 if (currentNode == nodes.Count - 1)
@@ -226,15 +234,15 @@ namespace CarGame.CarLogic
                 else
                 {
                     currentNode++;
-                    //isBraking = false;
+                    isBraking = false;
                 }
             }
         }
 
         private void SlowDown()
         {
-            wheelFL.motorTorque = maxMotorTorque / 4;
-            wheelFR.motorTorque = maxMotorTorque / 4;
+            wheelFL.motorTorque = maxMotorTorque / 2;
+            wheelFR.motorTorque = maxMotorTorque / 2;            
         }
 
         private void ApplyBraking()
