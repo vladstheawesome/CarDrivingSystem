@@ -8,6 +8,17 @@ namespace CarGame.CarLogic
     {
         Vehicle,
         Pedestration,
-        RoadObject
+        RoadObject,
+        TrafficLightAhead,
+        TrafficLight,
+        RoadSignSpeedLimit
+    }
+
+    public enum SpeedLimit
+    {
+        Slow = 25,
+        Medium = 50,
+        Fast = 100,
+        NA,
     }
 }

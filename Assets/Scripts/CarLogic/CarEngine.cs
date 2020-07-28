@@ -16,7 +16,7 @@ namespace CarGame.CarLogic
         public WheelCollider wheelFR;
         public WheelCollider wheelRL;
         public WheelCollider wheelRR;
-        public float maxMotorTorque = 40f;
+        //public float maxMotorTorque = 40f;
         public float maxBrakeTorque = 150f;
         public float currentSpeed;
         public float maximumSpeed = 50f;
@@ -26,6 +26,8 @@ namespace CarGame.CarLogic
         public Texture2D textureBraking;
         public Renderer carRenderer;
 
+        public bool isAvoiding = false;
+
         [Header("Sensors")]
         public float sensorLength = 5f;
         public Vector3 frontSensorPosition = new Vector3(0f, 0.2f, 0.5f);
@@ -33,11 +35,12 @@ namespace CarGame.CarLogic
         public float frontSensorAngle = 10;
 
         private List<Transform> nodes;
-        private int currentNode = 0;
-        private bool isAvoiding = false;
+        private int currentNode = 0;        
         private float targetSteerAngle = 0;
+        private float updateTorque = 0f;
 
-        Car360Sensor sensor;
+        CarBrain sensor;
+        CarDashBoard controlCar;
 
         void Start()
         {
@@ -47,7 +50,8 @@ namespace CarGame.CarLogic
             nodes = new List<Transform>();
             EngineGetNodes(pathTransforms, nodes);
 
-            sensor = GetComponent<Car360Sensor>();
+            sensor = GetComponent<CarBrain>();
+            controlCar = GetComponent<CarDashBoard>();
         }
 
         // Get all nodes from current path
@@ -62,11 +66,11 @@ namespace CarGame.CarLogic
             }
         }
 
-        private void FixedUpdate()
+        private void LateUpdate()
         {
             ObstacleChecker();
             ApplySteer();
-            ApplyDrive();
+            ApplyDrive(updateTorque);
             CheckWaypointDistance();
             ApplyBraking();
             LerpToSteerAngle();
@@ -94,7 +98,7 @@ namespace CarGame.CarLogic
                         var obstacleType = sensor.CheckObstacle(hit.collider);
 
                         Debug.DrawLine(sensorStartPosition, hit.point);
-                        isAvoiding = true;
+                        //isAvoiding = true;
                     }
                 }
             }
@@ -109,7 +113,7 @@ namespace CarGame.CarLogic
                     var obstacleType = sensor.CheckObstacle(hit.collider);
 
                     Debug.DrawLine(sensorStartPosition, hit.point);
-                    isAvoiding = true;
+                    //isAvoiding = true;
                     avoidMultiplier -= 1f;
                 }
             }
@@ -120,8 +124,10 @@ namespace CarGame.CarLogic
                 SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
+                    var obstacleType = sensor.CheckObstacle(hit.collider);
+
                     Debug.DrawLine(sensorStartPosition, hit.point);
-                    isAvoiding = true;
+                    //isAvoiding = true;
                     avoidMultiplier -= 0.5f;
                 }
             }
@@ -133,8 +139,10 @@ namespace CarGame.CarLogic
                 SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
+                    var obstacleType = sensor.CheckObstacle(hit.collider);
+
                     Debug.DrawLine(sensorStartPosition, hit.point);
-                    isAvoiding = true;
+                    //isAvoiding = true;
                     avoidMultiplier += 1f;
                 }
             }
@@ -145,8 +153,10 @@ namespace CarGame.CarLogic
                 SlowDown();
                 if (!hit.collider.CompareTag("Terrain"))
                 {
+                    var obstacleType = sensor.CheckObstacle(hit.collider);
+
                     Debug.DrawLine(sensorStartPosition, hit.point);
-                    isAvoiding = true;
+                    //isAvoiding = true;
                     avoidMultiplier += 0.5f;
                 }
             }
@@ -168,8 +178,6 @@ namespace CarGame.CarLogic
             if (isAvoiding)
             {                
                 targetSteerAngle = maxSteerAngle * avoidMultiplier;
-                //wheelFL.steerAngle = maxSteerAngle * avoidMultiplier;
-                //wheelFR.steerAngle = maxSteerAngle * avoidMultiplier;
             }
         }
 
@@ -191,15 +199,23 @@ namespace CarGame.CarLogic
             targetSteerAngle = newSteer;
         }
 
-        private void ApplyDrive()
+        public void ApplyDrive(float updateTorque)
         {
             // Calculate car speed based on how fast the wheels are spinning
             currentSpeed = 2 * Mathf.PI * wheelFL.radius * wheelFL.rpm * 60 / 1000;
 
             if (currentSpeed < maximumSpeed && !isBraking)
             {
-                wheelFL.motorTorque = maxMotorTorque;
-                wheelFR.motorTorque = maxMotorTorque;
+                var carTorque = controlCar.GetCurrentMaxMotorTorque(updateTorque);
+
+                wheelFL.motorTorque = carTorque;
+                wheelFR.motorTorque = carTorque;                
+            }
+            else if(currentSpeed < maximumSpeed && isBraking && updateTorque > 0)
+            {
+                //SlowDown();
+                wheelFL.motorTorque = updateTorque / 2;
+                wheelFR.motorTorque = updateTorque / 2;
             }
             else
             {
@@ -241,8 +257,9 @@ namespace CarGame.CarLogic
 
         private void SlowDown()
         {
-            wheelFL.motorTorque = maxMotorTorque / 2;
-            wheelFR.motorTorque = maxMotorTorque / 2;            
+            var carTorque = controlCar.GetCurrentMaxMotorTorque(updateTorque);
+            wheelFL.motorTorque = carTorque / 2;
+            wheelFR.motorTorque = carTorque / 2;            
         }
 
         private void ApplyBraking()
