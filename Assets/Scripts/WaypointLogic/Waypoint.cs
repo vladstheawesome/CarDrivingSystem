@@ -9,7 +9,7 @@ namespace CarGame.WaypointLogic
         public Waypoint previousWaypoint;
         public Waypoint nextWaypoint;
 
-        [Range(0f, 5f)]
+        [Range(0f, 20f)]
         public float width = 1f;
 
         public Vector3 GetPosition()
