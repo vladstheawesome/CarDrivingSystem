@@ -27,7 +27,8 @@ namespace CarGame.PedestrianLogic
             Vector3 destinationDirection = destination - transform.position;
             destinationDirection.y = 0;
 
-            // TEMP
+            // TODO : movement speed to be a random figure
+            //        so each pedestrian has doesnt move at same speed 
 
             float destinationDistance = destinationDirection.magnitude;
 

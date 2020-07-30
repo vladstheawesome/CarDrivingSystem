@@ -12,6 +12,11 @@ namespace CarGame.WaypointLogic
         [Range(0f, 20f)]
         public float width = 1f;
 
+        public List<Waypoint> branches = new List<Waypoint>();
+
+        [Range(0f, 1f)]
+        public float branchRatio = 0.5f;
+
         public Vector3 GetPosition()
         {
             // Return a random point based on the waypoint width
